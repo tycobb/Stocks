@@ -1,0 +1,57 @@
+__author__ = 'TyCobb123'
+
+from sqlalchemy import create_engine, Column, String, DateTime, Float, BigInteger, and_
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import pandas.io.data as web
+import datetime
+
+Base = declarative_base()
+
+class Stock(Base):
+    __tablename__ = 'stock'
+    date = Column(DateTime)
+    name = Column(String,primary_key=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(BigInteger)
+    adjclose = Column(Float)
+
+def test():
+    engine = create_engine("sqlite:///")
+    session = sessionmaker()
+    session.configure(bind=engine)
+    Base.metadata.create_all(engine)
+    s = session()
+    p = Stock(name = 'FB')
+    s.add(p)
+    p = s.query(Stock).filter(Stock.name == 'FB').one()
+    print("{}".format(p.name))
+
+
+def test2(ticker):
+
+    start_date = datetime.datetime(1900, 1, 1)
+    end_date = datetime.datetime(2099, 1, 1)
+
+    df = web.DataReader(ticker, 'yahoo', start_date, end_date)
+    df = df.rename(columns = {'Adj Close':'adjclose'})
+    df['name'] = ticker
+    return df
+
+def builddatabase1():
+    engine = create_engine("sqlite://")
+
+    fb = test2('fb')
+    fb.to_sql('stock',engine,if_exists='replace')
+
+    Session = sessionmaker(bind=engine)
+
+    session = Session()
+    s = session.query(Stock).filter(and_(Stock.name.like('fb')),(Stock.adjclose > 80)).one()
+    print(s.name,s.date,s.adjclose)
+
+builddatabase1()
