@@ -1,0 +1,30 @@
+__author__ = 'TyCobb'
+
+from sqlalchemy import create_engine, Column, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+Base = declarative_base()
+
+class Stock(Base):
+    __tablename__ = 'stock'
+    name = Column(String,primary_key=True)
+
+
+
+
+
+def test():
+    engine = create_engine("sqlite:///")
+    session = sessionmaker()
+    session.configure(bind=engine)
+    Base.metadata.create_all(engine)
+    s = session()
+    p = Stock(name = 'FB')
+    s.add(p)
+    p = s.query(Stock).filter(Stock.name == 'FB').one()
+    print("{}".format(p.name))
+    
+test()
