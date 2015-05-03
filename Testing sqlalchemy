@@ -1,6 +1,6 @@
 __author__ = 'TyCobb123'
 
-from sqlalchemy import create_engine, Column, String, DateTime, Float, BigInteger, and_
+from sqlalchemy import create_engine, Column, String, DateTime, Float, BigInteger, and_, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -11,7 +11,7 @@ Base = declarative_base()
 
 class Stock(Base):
     __tablename__ = 'stock'
-    date = Column(DateTime)
+    date = Column(DateTime,primary_key=True)
     name = Column(String,primary_key=True)
     open = Column(Float)
     high = Column(Float)
@@ -51,7 +51,19 @@ def builddatabase1():
     Session = sessionmaker(bind=engine)
 
     session = Session()
-    s = session.query(Stock).filter(and_(Stock.name.like('fb')),(Stock.adjclose > 80)).one()
-    print(s.name,s.date,s.adjclose)
+    s = session.query(Stock).filter(and_(Stock.name.like('fb')),(Stock.adjclose > 83)).all()
+    p = session.execute(session.query(Stock).filter(and_(Stock.name.like('fb')),(Stock.adjclose > 83)))
+    counter = 1
+    for i in p:
+        if counter == 1 :
+            print(i.keys())
+            print("===================")
+            print("Result Count: ", len(s))
+            print("===================")
+            counter += 1
+        for column,value in i.items():
+            print('{} {}'.format(column,value))
+
+
 
 builddatabase1()
