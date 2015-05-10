@@ -1,13 +1,21 @@
-def excelfile():
+def excelfile1():
     curr_row = 0
     for f in glob.glob('F:\Python\Milliman-Scripts\Test Folder\excel*.xlsx'):
         book = xlrd.open_workbook(f)
         print('Workbook: ' + f + '\n')
-        curr_row = 0
+        curr_row = 1
+        curr_cols = 1
         for s in book.sheets():
             print('Sheet: ' + s.name)
             num_rows = s.nrows - 1
-            curr_row = -1
-            while curr_row < num_rows:
-                curr_row += 1
-                print(s.row(curr_row))
+            num_cols = s.ncols - 1
+            for curr_row in range(num_rows):
+                c = []
+                for curr_col in range(num_cols):
+                    c.append(s.cell(curr_row,curr_col).value)
+                print('INSERT INTO ' + s.name +'(' + '\nValues ('+str(c)[1:-1]+')')
+                
+#Do you know of a better way?
+#Output: 
+#INSERT INTO Table 2(
+#Values (2.0, 2.0, 2.0, 2.0, 2.0)
