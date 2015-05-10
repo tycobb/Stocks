@@ -1,0 +1,13 @@
+def excelfile():
+    curr_row = 0
+    for f in glob.glob('F:\Python\Milliman-Scripts\Test Folder\excel*.xlsx'):
+        book = xlrd.open_workbook(f)
+        print('Workbook: ' + f + '\n')
+        curr_row = 0
+        for s in book.sheets():
+            print('Sheet: ' + s.name)
+            num_rows = s.nrows - 1
+            curr_row = -1
+            while curr_row < num_rows:
+                curr_row += 1
+                print(s.row(curr_row))
