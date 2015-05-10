@@ -1,24 +1,27 @@
 def excelfile1():
-    curr_row = 0
     x = []
     for f in glob.glob('F:\Python\Milliman-Scripts\Test Folder\excel*.xlsx'):
         book = xlrd.open_workbook(f)
-        print('Workbook: ' + f + '\n')
-        curr_row = 1
-        curr_cols = 1
+        print('\nWorkbook: ' + f)
         for s in book.sheets():
-            print('Sheet: ' + s.name)
+            print('\nSheet: ' + str(s.name).replace(' ',''))
             num_rows = s.nrows - 1
-            num_cols = s.ncols - 1
-            x = []
-            for curr_row in range(1,num_rows):
+            num_cols = s.ncols
+            colsName = []
+            for curr_row in range(num_rows):
                 c = []
                 for curr_col in range(num_cols):
-                    c.append(s.cell(curr_row,curr_col).value)
-                x.append('INSERT INTO ' + s.name)
-                x.append('VALUES ('+str(c)[1:-1]+')')
-                with open("output.txt",'w') as txt:
-                    txt.write('\n'.join(x))
+                    if curr_row == 0:
+                        colsName.append(s.cell(curr_row,curr_col).value.replace(' ','_'))
+                    else:
+                        c.append(s.cell(curr_row,curr_col).value)
+                if curr_row > 0:
+                    x.append('INSERT INTO ' + s.name.replace(' ','') + '('+','.join(str(s) for s in colsName)+')')
+                    x.append('VALUES ('+str(c)[1:-1]+');')
+
+            with open("output.txt",'w') as txt:
+                txt.write('\n'.join(x))
+    print('\nText File Created')
                 
 #Do you know of a better way?
 #Output: 
