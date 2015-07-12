@@ -9,28 +9,38 @@ def test():
     end  = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
 
     for ticker in ['SPY']:
-            all_data[ticker] = web.DataReader(ticker,'yahoo', start, end)
+        all_data[ticker] = web.DataReader(ticker,'yahoo', start, end)
 
-            data = all_data['SPY']
-            data['10d'] = 0.0
-            data['25d'] = 0.0
-            data['50d'] = 0.0
-            data['100d'] = 0.0
-            data['200d'] = 0.0
+        data = all_data['SPY']
+        data['10d'] = 0.0
+        data['25d'] = 0.0
+        data['50d'] = 0.0
+        data['100d'] = 0.0
+        data['200d'] = 0.0
 
-            data['10d'] = pd.rolling_mean(data['Adj Close'],10)
-            data['25d'] = pd.rolling_mean(data['Adj Close'],25)
-            data['50d'] = pd.rolling_mean(data['Adj Close'],50)
-            data['100d'] = pd.rolling_mean(data['Adj Close'],100)
-            data['200d'] = pd.rolling_mean(data['Adj Close'],200)
+        data['10d'] = pd.rolling_mean(data['Adj Close'],10)
+        data['25d'] = pd.rolling_mean(data['Adj Close'],25)
+        data['50d'] = pd.rolling_mean(data['Adj Close'],50)
+        data['100d'] = pd.rolling_mean(data['Adj Close'],100)
+        data['200d'] = pd.rolling_mean(data['Adj Close'],200)
 
-            data['Adj Close 50d'] = (data['Adj Close'] - data['50d'])/data['Adj Close']
-            #print(data[-5:])
-            data_top100 = data.sort('Adj Close 50d',ascending=False).head(100)
-            data_bot100 = data.sort('Adj Close 50d').head(100)
-            print(data_top100['Adj Close 50d'])
-            print(data_bot100['Adj Close 50d'])
-            print(data_top100['Adj Close 50d'].mean())
-            print(data_bot100['Adj Close 50d'].mean())
+        # data['abs50'] = abs(data['Adj Close']- data['50d'])
+        # data['50std'] = pd.rolling_std(data['abs50'],50)
+        # data['lower_std'] = data['50d'] + 2 * data['50std']
+        # data['upper_std'] = data['50d'] - 2 * data['50std']
+        #
+        # print(data[['Adj Close','50d','lower_std','upper_std']].tail(10))
+
+        data['Adj Close 50d'] = (data['Adj Close'] - data['50d'])/data['Adj Close']
+        data_top100 = data.sort('Adj Close 50d',ascending=False).head(100)
+        data_bot100 = data.sort('Adj Close 50d').head(100)
+        print(ticker,'Mean of top 100 close above 50day = ', data_top100['Adj Close 50d'].mean() * 100,'%' )
+        print(ticker,'Mean of top 100 close below 50day = ',data_bot100['Adj Close 50d'].mean() *100, '%')
+
+        curr_50d_diff = (data['Adj Close'][-1] - data['50d'][-1])/data['Adj Close'][-1] * 100
+        print(ticker, 'is currently ',curr_50d_diff, '% from the 50day')
 
 test()
+
+
+
