@@ -45,10 +45,12 @@ def sendemail(body):
     import smtplib
     from email.mime.text import MIMEText
 
+    sendto = ['petryszynjr@gmail.com','seansissman@gmail.com']
+
     msg = MIMEText(body)
-    msg['Subject'] = 'Moving Average Notification'
+    msg['Subject'] = 'SCW - Moving Average Notification'
     msg['From'] = 'pythonStockProgram@gmail.com'
-    msg['To'] = 'petryszynjr@gmail.com'
+    msg['To'] = ', '.join(sendto)
 
     s = smtplib.SMTP('smtp.gmail.com',587)
     s.ehlo()
