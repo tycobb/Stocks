@@ -3,44 +3,59 @@ __author__ = 'Main Desktop'
 import pandas as pd
 import pandas.io.data as web
 import datetime as dt
-def test():
-    all_data = {}
-    start = dt.datetime(1990,1,1)
-    end  = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
 
-    for ticker in ['SPY']:
+def ma_cross():
+    all_data = {}
+    email_body = []
+    start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
+    end  = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
+    tickers = getstocktickers()
+
+    for ticker in tickers:
         all_data[ticker] = web.DataReader(ticker,'yahoo', start, end)
 
-        data = all_data['SPY']
-        data['10d'] = 0.0
-        data['25d'] = 0.0
+        data = all_data[ticker]
+        data['8d'] = 0.0
+        data['21d'] = 0.0
         data['50d'] = 0.0
-        data['100d'] = 0.0
-        data['200d'] = 0.0
 
-        data['10d'] = pd.rolling_mean(data['Adj Close'],10)
-        data['25d'] = pd.rolling_mean(data['Adj Close'],25)
+        data['8d'] = pd.rolling_mean(data['Adj Close'],8)
+        data['21d'] = pd.rolling_mean(data['Adj Close'],21)
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
-        data['100d'] = pd.rolling_mean(data['Adj Close'],100)
-        data['200d'] = pd.rolling_mean(data['Adj Close'],200)
-
-        # data['abs50'] = abs(data['Adj Close']- data['50d'])
-        # data['50std'] = pd.rolling_std(data['abs50'],50)
-        # data['lower_std'] = data['50d'] + 2 * data['50std']
-        # data['upper_std'] = data['50d'] - 2 * data['50std']
-        #
-        # print(data[['Adj Close','50d','lower_std','upper_std']].tail(10))
 
         data['Adj Close 50d'] = (data['Adj Close'] - data['50d'])/data['Adj Close']
-        data_top100 = data.sort('Adj Close 50d',ascending=False).head(100)
-        data_bot100 = data.sort('Adj Close 50d').head(100)
-        print(ticker,'Mean of top 100 close above 50day = ', data_top100['Adj Close 50d'].mean() * 100,'%' )
-        print(ticker,'Mean of top 100 close below 50day = ',data_bot100['Adj Close 50d'].mean() *100, '%')
 
-        curr_50d_diff = (data['Adj Close'][-1] - data['50d'][-1])/data['Adj Close'][-1] * 100
-        print(ticker, 'is currently ',curr_50d_diff, '% from the 50day')
+        if data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2] :
+            email_body.append(str(ticker) + ' 8d has crossed above the 21d ')
+        if data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
+            email_body.append(str(ticker) + ' closing price crossed above its 50d')
+        elif data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
+            email_body.append(str(ticker) + ' closing price crossed below its 50d')
 
-test()
+    if email_body: sendemail('\n\n'.join(email_body))
 
 
+def getstocktickers():
+    filelocation = r'C:\Users\Main Desktop\Downloads\Comp Rating _ 90.xlsx'
+    df = pd.read_excel(filelocation)
+    df_list = df['Symbol'].tolist()
+    return df_list
 
+def sendemail(body):
+    import smtplib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(body)
+    msg['Subject'] = 'Moving Average Notification'
+    msg['From'] = 'pythonStockProgram@gmail.com'
+    msg['To'] = 'petryszynjr@gmail.com'
+
+    print(msg)
+    s = smtplib.SMTP('smtp.gmail.com',587)
+    s.ehlo()
+    s.starttls()
+    s.login('pythonStockProgram@gmail.com','thisisgoingtobeahardpasswordtoremember')
+    s.send_message(msg)
+    s.quit()
+
+ma_cross()
