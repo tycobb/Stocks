@@ -24,8 +24,6 @@ def ma_cross():
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
 
         data['Adj Close 50d'] = (data['Adj Close'] - data['50d'])/data['Adj Close']
-        # data_top100 = data.sort('Adj Close 50d',ascending=False).head(100)
-        # data_bot100 = data.sort('Adj Close 50d').head(100)
 
         if data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2] :
             email_body.append(str(ticker) + ' 8d has crossed above the 21d ')
@@ -52,7 +50,6 @@ def sendemail(body):
     msg['From'] = 'pythonStockProgram@gmail.com'
     msg['To'] = 'petryszynjr@gmail.com'
 
-    print(msg)
     s = smtplib.SMTP('smtp.gmail.com',587)
     s.ehlo()
     s.starttls()
@@ -61,6 +58,3 @@ def sendemail(body):
     s.quit()
 
 ma_cross()
-
-
-
