@@ -3,7 +3,10 @@ __author__ = 'Main Desktop'
 import pandas as pd
 import pandas.io.data as web
 import datetime as dt
-
+import matplotlib.dates as mdates
+from matplotlib.dates import num2date
+from matplotlib.finance import candlestick
+import matplotlib.pyplot as plt
 
 def main():
     ma_cross()
@@ -45,7 +48,7 @@ def ma_cross():
         if (data['High'][-1] > data['High'][-2] and data['Adj Close'][-1] < data['Low'][-2] and
                     data['Volume'][-1] > data['Vol-50d'][-1] * 1.25):
             email_body.append(str(ticker) + ' -- Bearish Reversal with Vol 25% higher than 50d average')
-            
+
     if email_body:
         email_body.insert(0,'Data from ' + str(end))
         email_body.insert(1,'----------------------',)
