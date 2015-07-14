@@ -4,17 +4,24 @@ import pandas as pd
 import pandas.io.data as web
 import datetime as dt
 
+
+def main():
+    ma_cross()
+
+
 def ma_cross():
     all_data = {}
     email_body = []
+
     start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
-    end  = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
+    end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
+
     tickers = get_stock_tickers()
 
     for ticker in tickers:
         all_data[ticker] = web.DataReader(ticker,'yahoo', start, end)
-
         data = all_data[ticker]
+
         data['8d'] = 0.0
         data['21d'] = 0.0
         data['50d'] = 0.0
@@ -24,26 +31,39 @@ def ma_cross():
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
 
-        data['Adj Close 50d'] = (data['Adj Close'] - data['50d'])/data['Adj Close']
-
         if data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2] :
-            email_body.append(str(ticker) + ' 8d has crossed above the 21d.')
+            email_body.append(str(ticker) + ' -- 8d has crossed above the 21d.')
         if data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            email_body.append(str(ticker) + ' closing price crossed above its 50d.')
+            email_body.append(str(ticker) + ' -- closing price crossed above its 50d.')
         elif data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            email_body.append(str(ticker) + ' closing price crossed below its 50d.')
+            email_body.append(str(ticker) + ' -- closing price crossed below its 50d.')
         if data['Volume'][-1] > data['Vol-50d'][-1] * 1.50 :
-            email_body.append(str(ticker) + ' Volume was 50% higher than the 50d average.')
+            email_body.append(str(ticker) + ' -- Volume was 50% higher than the 50d average.')
+        if (data['Low'][-1] < data['Low'][-2] and data['Adj Close'][-1] > data['High'][-2] and
+                    data['Volume'][-1] > data['Vol-50d'][-1] * 1.25):
+            email_body.append(str(ticker) + ' -- Bullish Reversal with Vol 25% higher than 50d average')
+        if (data['High'][-1] > data['High'][-2] and data['Adj Close'][-1] < data['Low'][-2] and
+                    data['Volume'][-1] > data['Vol-50d'][-1] * 1.25):
+            email_body.append(str(ticker) + ' -- Bearish Reversal with Vol 25% higher than 50d average')
+            
+    if email_body:
+        email_body.insert(0,'Data from ' + str(end))
+        email_body.insert(1,'----------------------',)
+        send_email('\n\n'.join(email_body))
 
-    if email_body: send_email('\n\n'.join(email_body))
-    #if email_body: print('\n'.join(email_body))
+    # if email_body:
+    #     email_body.insert(0,'Data from ' + str(end))
+    #     email_body.insert(1,'----------------------',)
+    #     print('\n'.join(email_body))
+
 
 def get_stock_tickers():
-    filelocation = r'C:\Users\Main Desktop\Downloads\Comp Rating _ 90.xlsx'
-    df = pd.read_excel(filelocation)
+    file_location = r'C:\Users\Main Desktop\Downloads\Comp Rating _ 90.xlsx'
+    df = pd.read_excel(file_location)
     df_list = df['Symbol'].tolist()
     df_list.extend(('SPY','QQQ'))
     return df_list
+
 
 def send_email(body):
     import smtplib
@@ -61,4 +81,4 @@ def send_email(body):
     s.send_message(msg)
     s.quit()
 
-ma_cross()
+if __name__ == '__main__': main()
