@@ -12,11 +12,25 @@ def main():
 def ma_cross():
     all_data = {}
     email_body = []
+    email_body_1 = []
+    email_body_2 = []
+    email_body_3 = []
+    email_body_4 = []
+    email_body_5 = []
+    email_body_6 = []
 
     start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
     end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
 
     tickers = get_stock_tickers()
+
+    cnt_cross_8_21 = 0
+    cnt_cross_50_up = 0
+    cnt_cross_50_down = 0
+    cnt_50d_vol = 0
+    cnt_cross_50_down = 0
+    cnt_bullish_rev = 0
+    cnt_bearish_rev = 0
 
     for ticker in tickers:
         all_data[ticker] = web.DataReader(ticker,'yahoo', start, end)
@@ -32,29 +46,46 @@ def ma_cross():
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
 
         if data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2] :
-            email_body.append(str(ticker) + ' -- 8d has crossed above the 21d.')
+            if cnt_cross_8_21 == 0 : email_body_1.append('\n8d has crossed above the 21d.\n----------')
+            email_body_1.append(ticker)
+            cnt_cross_8_21 += 1
         if data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            email_body.append(str(ticker) + ' -- closing price crossed above its 50d.')
+            if cnt_cross_50_up == 0 : email_body_2.append('\nclosing price crossed above its 50d.\n----------')
+            email_body_2.append(ticker)
+            cnt_cross_50_up += 1
         elif data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            email_body.append(str(ticker) + ' -- closing price crossed below its 50d.')
+            if cnt_cross_50_down == 0 : email_body_3.append('\nclosing price crossed below its 50d.\n----------')
+            email_body_3.append(ticker)
+            cnt_cross_50_down += 1
         if data['Volume'][-1] > data['Vol-50d'][-1] * 1.50 :
-            email_body.append(str(ticker) + ' -- Volume was 50% higher than the 50d average.')
+            if cnt_50d_vol == 0 : email_body_4.append('\nVolume was 50% higher than the 50d average.\n----------')
+            email_body_4.append(ticker)
+            cnt_50d_vol += 1
         if (data['Low'][-1] < data['Low'][-2] and data['Adj Close'][-1] > data['High'][-2] and
                     data['Volume'][-1] > data['Vol-50d'][-1] * 1.25):
-            email_body.append(str(ticker) + ' -- Bullish Reversal with Vol 25% higher than 50d average')
+            if cnt_bullish_rev == 0 : email_body_5.append('\nBullish Reversal with Vol 25% higher than 50d average.\n----------')
+            email_body_5.append(ticker)
+            cnt_bullish_rev += 1
         if (data['High'][-1] > data['High'][-2] and data['Adj Close'][-1] < data['Low'][-2] and
                     data['Volume'][-1] > data['Vol-50d'][-1] * 1.25):
-            email_body.append(str(ticker) + ' -- Bearish Reversal with Vol 25% higher than 50d average')
+            if cnt_bearish_rev == 0 : email_body_6.append('\nBearish Reversal with Vol 25% higher than 50d average.\n----------')
+            email_body_6.append(ticker)
+            cnt_bearish_rev += 1
 
-    if email_body:
-        email_body.insert(0,'Data from ' + str(end))
-        email_body.insert(1,'----------------------',)
-        send_email('\n\n'.join(email_body))
+    email_body.append(email_body_1)
+    email_body.append(email_body_2)
+    email_body.append(email_body_3)
+    email_body.append(email_body_4)
+    email_body.append(email_body_5)
+    email_body.append(email_body_6)
+
+     if email_body:
+         email_body.insert(0,'Data from ' + str(end) + '\n--------------')
+         send_email('\n'.join(str(item) for x in email_body for item in x))
 
     # if email_body:
-    #     email_body.insert(0,'Data from ' + str(end))
-    #     email_body.insert(1,'----------------------',)
-    #     print('\n'.join(email_body))
+    #     email_body.insert(0,'Data from ' + str(end) + '\n--------------')
+    #     print('\n'.join(str(item) for x in email_body for item in x))
 
 
 def get_stock_tickers():
@@ -82,3 +113,6 @@ def send_email(body):
     s.quit()
 
 if __name__ == '__main__': main()
+
+
+
