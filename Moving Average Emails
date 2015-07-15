@@ -50,11 +50,11 @@ def ma_cross():
             email_body_1.append(ticker)
             cnt_cross_8_21 += 1
         if data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            if cnt_cross_50_up == 0 : email_body_2.append('\nclosing price crossed above its 50d.\n----------')
+            if cnt_cross_50_up == 0 : email_body_2.append('\nClosing price crossed above its 50d.\n----------')
             email_body_2.append(ticker)
             cnt_cross_50_up += 1
         elif data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]:
-            if cnt_cross_50_down == 0 : email_body_3.append('\nclosing price crossed below its 50d.\n----------')
+            if cnt_cross_50_down == 0 : email_body_3.append('\nClosing price crossed below its 50d.\n----------')
             email_body_3.append(ticker)
             cnt_cross_50_down += 1
         if data['Volume'][-1] > data['Vol-50d'][-1] * 1.50 :
@@ -79,12 +79,14 @@ def ma_cross():
     email_body.append(email_body_5)
     email_body.append(email_body_6)
 
-     if email_body:
-         email_body.insert(0,'Data from ' + str(end) + '\n--------------')
-         send_email('\n'.join(str(item) for x in email_body for item in x))
+    if email_body:
+        date_message = [str('Data from ' + str(end))]
+        email_body.insert(0,date_message)
+        send_email('\n'.join(str(item) for x in email_body for item in x))
 
     # if email_body:
-    #     email_body.insert(0,'Data from ' + str(end) + '\n--------------')
+    #     date_message = [str('Data from ' + str(end))]
+    #     email_body.insert(0,date_message)
     #     print('\n'.join(str(item) for x in email_body for item in x))
 
 
