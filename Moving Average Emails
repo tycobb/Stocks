@@ -61,8 +61,8 @@ def ma_cross():
             if cnt_cross_50_down == 0: email_body_3.append('\nClosing price crossed below its 50d.\n----------')
             email_body_3.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
             cnt_cross_50_down += 1
-        if data['Volume'][-1] > data['Vol-50d'][-1] * 2:
-            if cnt_50d_vol == 0: email_body_4.append('\nVolume was 100% higher than the 50d average.\n----------')
+        if data['Volume'][-1] > data['Vol-50d'][-1] * 2 and data['Adj Close'][-1] >= data['Adj Close'][-2] * 1.05:
+            if cnt_50d_vol == 0: email_body_4.append('\nVolume was 100% higher than the 50d average with a +5% gain.\n----------')
             email_body_4.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
             cnt_50d_vol += 1
         if (data['Low'][-1] < data['Low'][-2] and data['Adj Close'][-1] > data['High'][-2] and
@@ -85,15 +85,15 @@ def ma_cross():
     email_body.append(email_body_5)
     email_body.append(email_body_6)
 
-    # if email_body:
-    #     date_message = [str('Data from ' + str(end))]
-    #     email_body.insert(0,date_message)
-    #     send_email('\n'.join(str(item) for x in email_body for item in x))
-
     if email_body:
         date_message = [str('Data from ' + str(end))]
         email_body.insert(0,date_message)
-        print('\n'.join(str(item) for x in email_body for item in x))
+        send_email('\n'.join(str(item) for x in email_body for item in x))
+
+    # if email_body:
+    #     date_message = [str('Data from ' + str(end))]
+    #     email_body.insert(0,date_message)
+    #     print('\n'.join(str(item) for x in email_body for item in x))
 
 
 def get_stock_tickers():
