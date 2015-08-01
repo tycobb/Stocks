@@ -3,6 +3,7 @@ __author__ = 'Main Desktop'
 import pandas as pd
 import pandas.io.data as web
 import datetime as dt
+from scipy import stats, linspace
 
 
 def main():
@@ -18,6 +19,8 @@ def ma_cross():
     email_body_4 = []
     email_body_5 = []
     email_body_6 = []
+    email_body_7 = []
+    email_body_8 = []
 
     start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
     end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
@@ -30,6 +33,10 @@ def ma_cross():
     cnt_50d_vol = 0
     cnt_bullish_rev = 0
     cnt_bearish_rev = 0
+    cnt_positive_slope = 0
+    cnt_negative_slope = 0
+    slope1 = 0
+    slope2 = 0
 
     for ticker,comp_rating in df_tuple:
         try:
@@ -48,6 +55,15 @@ def ma_cross():
         data['21d'] = pd.rolling_mean(data['Adj Close'],21)
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
+
+        # Linear Regression for Slope test
+        y1 = data['50d'][-10:].tolist()
+        x1 = [t for t in range(1,len(y1)+1)]
+        slope1, intercept1, r_value1, p_value1, stderr1 = stats.linregress(x1,y1)
+
+        y2 = data['50d'][-11:-1].tolist()
+        x2 = [t for t in range(1,len(y2)+1)]
+        slope2, intercept2, r_value2, p_value2, stderr2 = stats.linregress(x2,y2)
 
         if data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2]:
             if cnt_cross_8_21 == 0: email_body_1.append('\n8d has crossed above the 21d.\n----------')
@@ -77,6 +93,16 @@ def ma_cross():
                 email_body_6.append('\nBearish Reversal with Vol 50% higher than 50d average.\n----------')
             email_body_6.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
             cnt_bearish_rev += 1
+        if slope2 < 0 < slope1:
+            if cnt_positive_slope ==  0:
+                email_body_7.append('\nLinear Regress slope when from negative to postive on the 50d over the last 10days.\n----------')
+            email_body_7.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
+            cnt_positive_slope += 1
+        elif slope1 < 0 < slope2:
+            if cnt_negative_slope ==  0:
+                email_body_8.append('\nLinear Regress slope when from postive to negative on the 50d over the last 10days.\n----------')
+            email_body_8.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
+            cnt_negative_slope += 1
 
     email_body.append(email_body_1)
     email_body.append(email_body_2)
@@ -84,6 +110,8 @@ def ma_cross():
     email_body.append(email_body_4)
     email_body.append(email_body_5)
     email_body.append(email_body_6)
+    email_body.append(email_body_7)
+    email_body.append(email_body_8)
 
     if email_body:
         date_message = [str('Data from ' + str(end))]
