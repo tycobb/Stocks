@@ -21,6 +21,8 @@ def ma_cross():
     email_body_6 = []
     email_body_7 = []
     email_body_8 = []
+    email_body_9 = []
+    email_body_10 = []
 
     start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
     end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
@@ -35,8 +37,8 @@ def ma_cross():
     cnt_bearish_rev = 0
     cnt_positive_slope = 0
     cnt_negative_slope = 0
-    slope1 = 0
-    slope2 = 0
+    cnt_min_adjclose = 0
+    cnt_max_adjclose = 0
 
     for ticker,comp_rating in df_tuple:
         try:
@@ -55,6 +57,9 @@ def ma_cross():
         data['21d'] = pd.rolling_mean(data['Adj Close'],21)
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
+
+        max_adjclose = data['Adj Close'].max()
+        min_adjclose = data['Adj Close'].min()
 
         # Linear Regression for Slope test
         y1 = data['50d'][-10:].tolist()
@@ -83,26 +88,30 @@ def ma_cross():
             cnt_50d_vol += 1
         if (data['Low'][-1] < data['Low'][-2] and data['Adj Close'][-1] > data['High'][-2] and
                 data['Volume'][-1] > data['Vol-50d'][-1] * 1.5):
-            if cnt_bullish_rev == 0:
-                email_body_5.append('\nBullish Reversal with Vol 50% higher than 50d average.\n----------')
+            if cnt_bullish_rev == 0: email_body_5.append('\nBullish Reversal with Vol 50% higher than 50d average.\n----------')
             email_body_5.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
             cnt_bullish_rev += 1
         if (data['High'][-1] > data['High'][-2] and data['Adj Close'][-1] < data['Low'][-2] and
                 data['Volume'][-1] > data['Vol-50d'][-1] * 1.5):
-            if cnt_bearish_rev == 0:
-                email_body_6.append('\nBearish Reversal with Vol 50% higher than 50d average.\n----------')
+            if cnt_bearish_rev == 0: email_body_6.append('\nBearish Reversal with Vol 50% higher than 50d average.\n----------')
             email_body_6.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
             cnt_bearish_rev += 1
         if slope2 < 0 < slope1:
-            if cnt_positive_slope ==  0:
-                email_body_7.append('\nLinear Regress slope when from negative to postive on the 50d over the last 10days.\n----------')
+            if cnt_positive_slope ==  0: email_body_7.append('\nLinear Regress slope when from negative to postive on the 50d over the last 10days.\n----------')
             email_body_7.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
             cnt_positive_slope += 1
         elif slope1 < 0 < slope2:
-            if cnt_negative_slope ==  0:
-                email_body_8.append('\nLinear Regress slope when from postive to negative on the 50d over the last 10days.\n----------')
+            if cnt_negative_slope ==  0: email_body_8.append('\nLinear Regress slope when from postive to negative on the 50d over the last 10days.\n----------')
             email_body_8.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
             cnt_negative_slope += 1
+        if max_adjclose == data['Adj Close'][-1]:
+            if cnt_max_adjclose == 0: email_body_9.append('\nClosed at the 100d high.\n----------')
+            email_body_9.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
+            cnt_max_adjclose += 1
+        elif min_adjclose == data['Adj Close'][-1]:
+            if cnt_min_adjclose == 0: email_body_10.append('\nClosed at the 100d lows.\n----------')
+            email_body_10.append(str(ticker) + ' --- ' + str(comp_rating).replace('.0', ''))
+            cnt_min_adjclose += 1
 
     email_body.append(email_body_1)
     email_body.append(email_body_2)
@@ -112,6 +121,8 @@ def ma_cross():
     email_body.append(email_body_6)
     email_body.append(email_body_7)
     email_body.append(email_body_8)
+    email_body.append(email_body_9)
+    email_body.append(email_body_10)
 
     if email_body:
         date_message = [str('Data from ' + str(end))]
