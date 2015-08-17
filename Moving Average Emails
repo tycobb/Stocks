@@ -20,29 +20,31 @@ def ma_cross():
     df_tuple = get_stock_tickers()
 
     #Counts
-    dict_cnt = {}
-    dict_cnt['8above21'] = 0
-    dict_cnt['crossabove50d'] = 0
-    dict_cnt['crossbelow50d'] = 0
-    dict_cnt['vol100%higher'] = 0
-    dict_cnt['bullishreversal'] = 0
-    dict_cnt['bearishreversal'] = 0
-    dict_cnt['slopehigher'] = 0
-    dict_cnt['slopelower'] = 0
-    dict_cnt['closeathigh'] = 0
-    dict_cnt['closeatlows'] = 0
+    dict_count = {}
 
-    dict_sym = {}
-    dict_sym['8above21'] = {}
-    dict_sym['crossabove50d'] = {}
-    dict_sym['crossbelow50d'] = {}
-    dict_sym['vol100%higher'] = {}
-    dict_sym['bullishreversal'] = {}
-    dict_sym['bearishreversal'] = {}
-    dict_sym['slopehigher'] = {}
-    dict_sym['slopelower'] = {}
-    dict_sym['closeathigh'] = {}
-    dict_sym['closeatlows'] = {}
+    dict_count['8above21'] = 0
+    dict_count['crossabove50d'] = 0
+    dict_count['crossbelow50d'] = 0
+    dict_count['vol100%higher'] = 0
+    dict_count['bullishreversal'] = 0
+    dict_count['bearishreversal'] = 0
+    dict_count['slopehigher'] = 0
+    dict_count['slopelower'] = 0
+    dict_count['closeathigh'] = 0
+    dict_count['closeatlows'] = 0
+
+    dict_symbol = {}
+
+    dict_symbol['8above21'] = {}
+    dict_symbol['crossabove50d'] = {}
+    dict_symbol['crossbelow50d'] = {}
+    dict_symbol['vol100%higher'] = {}
+    dict_symbol['bullishreversal'] = {}
+    dict_symbol['bearishreversal'] = {}
+    dict_symbol['slopehigher'] = {}
+    dict_symbol['slopelower'] = {}
+    dict_symbol['closeathigh'] = {}
+    dict_symbol['closeatlows'] = {}
 
     for ticker,comp_rating in df_tuple:
         try:
@@ -56,14 +58,15 @@ def ma_cross():
         data['8d'] = 0.0
         data['21d'] = 0.0
         data['50d'] = 0.0
+        data['Vol-50d'] = 0
 
         data['8d'] = pd.rolling_mean(data['Adj Close'],8)
         data['21d'] = pd.rolling_mean(data['Adj Close'],21)
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
 
-        max_adjclose = data['Adj Close'].max()
         min_adjclose = data['Adj Close'].min()
+        max_adjclose = data['Adj Close'].max()
 
         # Linear Regression for Slope test
         y1 = data['50d'][-10:].tolist()
@@ -78,28 +81,32 @@ def ma_cross():
 
         for key, value in d['Test'].items():
             if value:
-                dict_sym[str(key)][str(ticker)] = (str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
-                dict_cnt[str(key)] += 1
+                dict_symbol[str(key)][str(ticker)] = (str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
+                dict_count[str(key)] += 1
 
-    for key, value in dict_cnt.items():
+    for key, value in sorted(dict_count.items()):
         if value > 0:
             email_body.append(d['Email'][str(key)])
-            for k,v in dict_sym[str(key)].items():
+            for k,v in dict_symbol[str(key)].items():
                 email_body.append(v)
-
-    if email_body:
-        date_message = [str('Data from ' + str(end))]
-        email_body.insert(0,date_message)
-        send_email('\n'.join(str(item) for item in email_body))
 
     # if email_body:
     #     date_message = [str('Data from ' + str(end))]
     #     email_body.insert(0,date_message)
-    #     print('\n'.join(str(item) for item in email_body))
+    #     send_email('\n'.join(str(item) for item in email_body))
+
+    if email_body:
+        date_message = [str('Data from ' + str(end))]
+        email_body.insert(0,date_message)
+        print('\n'.join(str(item) for item in email_body))
 
 
 def get_stock_tickers():
-    file_location = r'C:\Users\Main Desktop\Downloads\Email Script.xlsx'
+    '''
+    This pulls the stock list that will be used to loop.
+    '''
+
+    file_location = r'C:\Users\Main Desktop\Downloads\Email Script(2).xlsx'
     df = pd.read_excel(file_location)
     sym = df['Symbol'].tolist()
     comp = df['Comp Rating'].tolist()
@@ -109,6 +116,9 @@ def get_stock_tickers():
 
 
 def send_email(body):
+    '''
+    This sends the email.
+    '''
     import smtplib
     from email.mime.text import MIMEText
 
@@ -126,6 +136,10 @@ def send_email(body):
 
 
 def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
+    '''
+    This runs all the data tests.
+    '''
+
     dict_dicts = {}
     tests = {}
     test_email = {}
@@ -150,18 +164,16 @@ def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
     test_email['vol100%higher'] = '\nVolume was 100% higher than the 50d average with a +5% gain.\n----------'
     test_email['bullishreversal'] = '\nBullish Reversal with Vol 50% higher than 50d average.\n----------'
     test_email['bearishreversal'] = '\nBearish Reversal with Vol 50% higher than 50d average.\n----------'
-    test_email['slopehigher'] = '\nLinear Regress slope when from negative to postive on the 50d over the last 10days.\n----------'
-    test_email['slopelower'] = '\nLinear Regress slope when from postive to negative on the 50d over the last 10days.\n----------'
+    test_email['slopehigher'] = '\nLinear Regress slope [negative to positive] on the 50d, last 10days.\n----------'
+    test_email['slopelower'] = '\nLinear Regress slope [positive to negative] on the 50d, last 10days.\n----------'
     test_email['closeathigh'] = '\nClosed at the 100d high.\n----------'
     test_email['closeatlows'] = '\nClosed at the 100d lows.\n----------'
 
     dict_dicts['Test'] = tests
     dict_dicts['Email'] = test_email
-    
+
     return dict_dicts
 
 
 if __name__ == '__main__': main()
-
-
 
