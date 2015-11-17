@@ -11,7 +11,7 @@ def main():
 
 
 def ma_cross():
-    
+
     all_data = {}
     email_body = []
 
@@ -88,7 +88,7 @@ def ma_cross():
 
 def get_stock_tickers():
 
-    file_location = r'C:\Users\Main Desktop\Downloads\Email Script(2).xlsx'
+    file_location = r'/media/michael/581E41BE1E4195C2/Python/Code/Programs/Stock_Programs/Email.xlsx'
     df = pd.read_excel(file_location)
     sym = df['Symbol'].tolist()
     comp = df['Comp Rating'].tolist()
@@ -116,7 +116,7 @@ def send_email(body):
 
 
 def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
-    
+
     dict_dicts = {}
     tests = {}
     test_email = {}
@@ -152,3 +152,6 @@ def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
 
 
 if __name__ == '__main__': main()
+
+
+
