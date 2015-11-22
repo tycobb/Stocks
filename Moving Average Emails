@@ -15,7 +15,7 @@ def ma_cross():
     all_data = {}
     email_body = []
 
-    start = (dt.datetime.today() - dt.timedelta(days=100)).replace(hour=0,minute=0,second=0,microsecond=0)
+    start = (dt.datetime.today() - dt.timedelta(days=200)).replace(hour=0,minute=0,second=0,microsecond=0)
     end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
 
     df_tuple = get_stock_tickers()
@@ -30,7 +30,8 @@ def ma_cross():
         'slopehigher' : {},
         'slopelower' : {},
         'closeathigh' : {},
-        'closeatlows' : {}
+        'closeatlows' : {},
+        '50above200' : {}
         }
 
     for ticker,comp_rating in df_tuple:
@@ -45,11 +46,13 @@ def ma_cross():
         data['8d'] = 0.0
         data['21d'] = 0.0
         data['50d'] = 0.0
+        data['200d'] = 0.0
         data['Vol-50d'] = 0
 
         data['8d'] = pd.rolling_mean(data['Adj Close'],8)
         data['21d'] = pd.rolling_mean(data['Adj Close'],21)
         data['50d'] = pd.rolling_mean(data['Adj Close'],50)
+        data['200d'] = pd.rolling_mean(data['Adj Close'],200)
         data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
 
         min_adjclose = data['Adj Close'].min()
@@ -80,6 +83,8 @@ def ma_cross():
         email_body.insert(0,date_message)
         send_email('\n'.join(str(item) for item in email_body))
 
+    # This is used to test the ouput without sending an email
+
     # if email_body:
     #     date_message = [str('Data from ' + str(end))]
     #     email_body.insert(0,date_message)
@@ -88,7 +93,7 @@ def ma_cross():
 
 def get_stock_tickers():
 
-    file_location = r'/media/michael/581E41BE1E4195C2/Python/Code/Programs/Stock_Programs/Email.xlsx'
+    file_location = r'/home/michael/googledrive/scripts/Email.xlsx'
     df = pd.read_excel(file_location)
     sym = df['Symbol'].tolist()
     comp = df['Comp Rating'].tolist()
@@ -121,7 +126,7 @@ def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
     tests = {}
     test_email = {}
 
-    # Conditions
+    # Test Conditiion Conditions
     tests['8above21'] = data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2]
     tests['crossabove50d'] = data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]
     tests['crossbelow50d'] = data['50d'][-1] > data['Adj Close'][-1] and data['50d'][-2] < data['Adj Close'][-2]
@@ -132,9 +137,11 @@ def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
     tests['slopelower'] = slope1 < 0 < slope2
     tests['closeathigh'] = max_adjclose == data['Adj Close'][-1]
     tests['closeatlows'] = min_adjclose == data['Adj Close'][-1]
+    tests['50over200'] = data['50d'][-1] > data['200d'][-1] and data['50d'][-2] < data['200d'][-2]
 
-    # Emails
+    # Emails Categories
     test_email['8above21'] = '\n8d has crossed above the 21d.\n----------'
+    test_email['50above200'] = '\n50d has crossed above the 200d.\n----------'
     test_email['crossabove50d'] = '\nClosing price crossed above its 50d.\n----------'
     test_email['crossbelow50d'] = '\nClosing price crossed below its 50d.\n----------'
     test_email['vol100%higher'] = '\nVolume was 100% higher than the 50d average with a +5% gain.\n----------'
@@ -152,6 +159,7 @@ def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
 
 
 if __name__ == '__main__': main()
+
 
 
 
