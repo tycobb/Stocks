@@ -53,7 +53,7 @@ def ma_cross():
         # Boolean for moving averages checks
 
         for moving_average in moving_averages:
-            data['above' + moving_average] = data[moving_average + 'd'][-1] >= data['Adj Close'][-1]
+            data['above' + moving_average] = data['Adj Close'][-1] >= data[moving_average + 'd'][-1]
 
 
         # Boolen check for moving average cross over
@@ -76,6 +76,8 @@ def ma_cross():
 
         # Only pull Test Columns
         frames.append(data.iloc[:,11:])
+        # used for testing the data
+        # frames.append(data)
     
     # Combine all the dataframes into 1
     results = pd.concat(frames)
@@ -83,30 +85,29 @@ def ma_cross():
     # Add the Date to the Email Message
     date_message = [str('Data from ' + str(end))]
     email_body.insert(0,date_message)
-    email_body.insert(1,results.to_string(justify='right'))
+    email_body.insert(1,results.to_string(justify='left', col_space=8))
     
     # Send Email...
     send_email('\n'.join(str(item) for item in email_body))
 
     # This is used to test the ouput without sending an email
-
     # print('\n'.join(str(item) for item in email_body))
 
 
 def get_stock_tickers():
 
     sectors = {}
-    sectors['XLU'] = 'Utilities'
-    sectors['XLP'] = 'Consumer Staples'
-    sectors['XLE'] = 'Energy'
-    sectors['XLB'] = 'Materials'
-    sectors['XLI'] = 'Industrial'
-    sectors['XLK'] = 'Technology'
-    sectors['SPY'] = 'SP500'
-    sectors['XLY'] = 'Consumer Discretionary'
-    sectors['XLV'] = 'Health Care'
-    sectors['XLF'] = 'Financial'
-    sectors['XBI'] = 'Biotech'
+    sectors['XLU'] = 'Utilities---------'
+    sectors['XLP'] = 'Con. Staples------'
+    sectors['XLE'] = 'Energy------------'
+    sectors['XLB'] = 'Materials---------'
+    sectors['XLI'] = 'Industrial--------'
+    sectors['XLK'] = 'Technology--------'
+    sectors['SPY'] = 'SP500-------------'
+    sectors['XLY'] = 'Con. Discretionary'
+    sectors['XLV'] = 'Health Care-------'
+    sectors['XLF'] = 'Financial---------'
+    sectors['XBI'] = 'Biotech-----------'
 
 
     return sectors
@@ -118,7 +119,7 @@ def send_email(body):
     from email.mime.text import MIMEText
 
     msg = MIMEText(body)
-    msg['Subject'] = 'SCW - Sector Moving Average Checks2'
+    msg['Subject'] = 'SCW - Sector Moving Average Checks'
     msg['From'] = 'pythonStockProgram@gmail.com'
     # msg['To'] = 'petryszynjr@gmail.com'
     msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com'
