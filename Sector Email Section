@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+# __author__ = 'Main Desktop'
+
+# import sys
+# print(sys.version)
+
+import pandas as pd
+import pandas.io.data as web
+import datetime as dt
+
+
+def main():
+    ma_cross()
+
+
+def ma_cross():
+
+    all_data = {}
+    email_body = []
+
+    start = (dt.datetime.today() - dt.timedelta(days=300)).replace(hour=0,minute=0,second=0,microsecond=0)
+    end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
+
+    dict_sectors = get_stock_tickers()
+
+    l = {}
+
+
+    for ticker, name in sorted(dict_sectors.items()):
+        # Pulls YAHOO data into a Dataframe
+        try:
+            all_data[ticker] = web.DataReader(str(ticker),'yahoo', start, end)
+
+        except OSError:
+            print('Error getting data from Yahoo. Ticker: ' + ticker)
+
+        data = all_data[ticker]
+
+        # Track Moving Average Prices
+        
+        moving_averages = '10 20 50 100 200'.split()
+
+        for moving_average in moving_averages:
+            data[moving_average + 'd'] = 0.0
+            data[moving_average + 'd'] = pd.rolling_mean(data['Adj Close'],int(moving_average))
+
+        # Boolean for moving averages checks
+
+        for moving_average in moving_averages:
+            data['above' + moving_average] = data[moving_average + 'd'][-1] >= data['Adj Close'][-1]
+
+
+        # Boolen check for moving average cross over
+        # X is crosses above Y : X/Y format
+
+        crossovers = '20/50 50/200'.split()
+
+        for crossover in crossovers:
+            ma = crossover.split('/')
+            data[ma[0] + 'over' + ma[1]] = data[ma[0] + 'd'][-1] >= data[ma[1] + 'd'][-1]
+
+
+
+    # if email_body:
+    #     date_message = [str('Data from ' + str(end))]
+    #     email_body.insert(0,date_message)
+    #     send_email('\n'.join(str(item) for item in email_body))
+
+    # This is used to test the ouput without sending an email
+
+    # if email_body:
+    #     date_message = [str('Data from ' + str(end))]
+    #     email_body.insert(0,date_message)
+    #     print('\n'.join(str(item) for item in email_body))
+
+
+def get_stock_tickers():
+
+    sectors = {}
+    sectors['XLU'] = 'Utilities'
+    sectors['XLP'] = 'Consumer Staples'
+    sectors['XLE'] = 'Energy'
+    sectors['XLB'] = 'Materials'
+    sectors['XLI'] = 'Industrial'
+    sectors['XLK'] = 'Technology'
+    sectors['SPY'] = 'SP500'
+    sectors['XLY'] = 'Consumer Discretionary'
+    sectors['XLV'] = 'Health Care'
+    sectors['XLF'] = 'Financial'
+    sectors['XBI'] = 'Biotech'
+
+
+    return sectors
+
+
+def send_email(body):
+
+    import smtplib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(body)
+    msg['Subject'] = 'SCW - Moving Average Notification'
+    msg['From'] = 'pythonStockProgram@gmail.com'
+    msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com'
+
+    s = smtplib.SMTP('smtp.gmail.com',587)
+    s.ehlo()
+    s.starttls()
+    s.login('pythonStockProgram@gmail.com','thisisgoingtobeahardpasswordtoremember')
+    s.send_message(msg)
+    s.quit()
+
+if __name__ == '__main__': main()
