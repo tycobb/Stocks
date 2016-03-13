@@ -23,7 +23,7 @@ def ma_cross():
 
     dict_sectors = get_stock_tickers()
 
-    l = {}
+    frames = []
 
 
     for ticker, name in sorted(dict_sectors.items()):
@@ -44,6 +44,10 @@ def ma_cross():
             data[moving_average + 'd'] = 0.0
             data[moving_average + 'd'] = pd.rolling_mean(data['Adj Close'],int(moving_average))
 
+        # Add symbol to DataFrame
+
+        data['symbol'] = ticker
+
         # Boolean for moving averages checks
 
         for moving_average in moving_averages:
@@ -59,19 +63,32 @@ def ma_cross():
             ma = crossover.split('/')
             data[ma[0] + 'over' + ma[1]] = data[ma[0] + 'd'][-1] >= data[ma[1] + 'd'][-1]
 
+        
+        # Only pull Last Row
 
+        data = data[-1:]
 
-    # if email_body:
-    #     date_message = [str('Data from ' + str(end))]
-    #     email_body.insert(0,date_message)
-    #     send_email('\n'.join(str(item) for item in email_body))
+        #Remove Date Index and set symbol to be the new index
+
+        data = data.set_index('symbol')
+
+        # Only pull Test Columns
+        frames.append(data.iloc[:,11:])
+    
+    # Combine all the dataframes into 1
+    results = pd.concat(frames)
+
+    # Add the Date to the Email Message
+    date_message = [str('Data from ' + str(end))]
+    email_body.insert(0,date_message)
+    email_body.insert(1,results.to_string(justify='left'))
+    
+    # Send Email...
+    send_email('\n'.join(str(item) for item in email_body))
 
     # This is used to test the ouput without sending an email
 
-    # if email_body:
-    #     date_message = [str('Data from ' + str(end))]
-    #     email_body.insert(0,date_message)
-    #     print('\n'.join(str(item) for item in email_body))
+    print('\n'.join(str(item) for item in email_body))
 
 
 def get_stock_tickers():
@@ -99,8 +116,9 @@ def send_email(body):
     from email.mime.text import MIMEText
 
     msg = MIMEText(body)
-    msg['Subject'] = 'SCW - Moving Average Notification'
+    msg['Subject'] = 'SCW - Sector Moving Average Checks2'
     msg['From'] = 'pythonStockProgram@gmail.com'
+    # msg['To'] = 'petryszynjr@gmail.com'
     msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com'
 
     s = smtplib.SMTP('smtp.gmail.com',587)
