@@ -48,6 +48,8 @@ def ma_cross():
 
         data['symbol'] = ticker
 
+        data['sector'] = dict_sectors[ticker]
+
         # Boolean for moving averages checks
 
         for moving_average in moving_averages:
@@ -81,14 +83,14 @@ def ma_cross():
     # Add the Date to the Email Message
     date_message = [str('Data from ' + str(end))]
     email_body.insert(0,date_message)
-    email_body.insert(1,results.to_string(justify='left'))
+    email_body.insert(1,results.to_string(justify='right'))
     
     # Send Email...
     send_email('\n'.join(str(item) for item in email_body))
 
     # This is used to test the ouput without sending an email
 
-    print('\n'.join(str(item) for item in email_body))
+    # print('\n'.join(str(item) for item in email_body))
 
 
 def get_stock_tickers():
