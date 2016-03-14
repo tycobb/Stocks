@@ -121,8 +121,8 @@ def send_email(body):
     msg = MIMEText(body)
     msg['Subject'] = 'SCW - Sector Moving Average Checks'
     msg['From'] = 'pythonStockProgram@gmail.com'
-    # msg['To'] = 'petryszynjr@gmail.com'
-    msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com'
+    # msg['To'] = 'petryszynjr@gmail.com' #Test Email just to me
+    msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com, noahpinegar@gmail.com'
 
     s = smtplib.SMTP('smtp.gmail.com',587)
     s.ehlo()
