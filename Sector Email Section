@@ -10,13 +10,61 @@ import datetime as dt
 
 
 def main():
-    ma_cross()
+    start_script()
 
 
-def ma_cross():
+def get_stock_data(ticker, start, end):
+    # Pulls YAHOO data into a Dataframe
+    try:
+        return(web.DataReader(str(ticker),'yahoo', start, end))
+
+    except OSError:
+        print('Error getting data from Yahoo. Ticker: ' + ticker)    
+
+
+def add_moving_averages(data, moving_averages):
+        
+    # Add moving averages to DataFrame
+
+    for moving_average in moving_averages:
+        data[moving_average + 'd'] = 0.0
+        data[moving_average + 'd'] = pd.rolling_mean(data['Adj Close'],int(moving_average))
+
+    return data
+
+def add_moving_averages_check(data, moving_averages):
+    
+    # Boolean for moving averages checks
+    
+    for moving_average in moving_averages:
+        data['above' + moving_average] = data['Adj Close'][-1] >= data[moving_average + 'd'][-1]
+
+    return data
+
+
+def add_crossover_check(data, crossovers):
+
+    # Boolen check for moving average cross over
+
+    for crossover in crossovers:
+        ma = crossover.split('/')
+        data[ma[0] + 'over' + ma[1]] = data[ma[0] + 'd'][-1] >= data[ma[1] + 'd'][-1]
+
+    return data
+
+def add_ticker_sector(data,ticker, name):
+    
+    # Add symbol and ticker to DataFrame
+    
+    data['symbol'] = ticker
+    data['sector'] = name
+
+    return data
+
+
+def start_script():
 
     all_data = {}
-    email_body = []
 
     start = (dt.datetime.today() - dt.timedelta(days=300)).replace(hour=0,minute=0,second=0,microsecond=0)
     end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
@@ -25,46 +73,35 @@ def ma_cross():
 
     frames = []
 
+    moving_averages = '10 20 50 100 200'.split()
 
+    # X is crosses above Y : X/Y format
+
+    crossovers = '20/50 50/200'.split()
+    
     for ticker, name in sorted(dict_sectors.items()):
         # Pulls YAHOO data into a Dataframe
-        try:
-            all_data[ticker] = web.DataReader(str(ticker),'yahoo', start, end)
+        
+        data = get_stock_data(ticker, start, end)
 
-        except OSError:
-            print('Error getting data from Yahoo. Ticker: ' + ticker)
-
-        data = all_data[ticker]
+        # Store data for all tickets
+        all_data[ticker] = data
 
         # Track Moving Average Prices
         
-        moving_averages = '10 20 50 100 200'.split()
+        data = add_moving_averages(data, moving_averages)
 
-        for moving_average in moving_averages:
-            data[moving_average + 'd'] = 0.0
-            data[moving_average + 'd'] = pd.rolling_mean(data['Adj Close'],int(moving_average))
+        # Add symbol/sector to DataFrame
 
-        # Add symbol to DataFrame
-
-        data['symbol'] = ticker
-
-        data['sector'] = dict_sectors[ticker]
+        data = add_ticker_sector(data,ticker, name)
 
         # Boolean for moving averages checks
 
-        for moving_average in moving_averages:
-            data['above' + moving_average] = data['Adj Close'][-1] >= data[moving_average + 'd'][-1]
-
+        data = add_moving_averages_check(data, moving_averages)
 
         # Boolen check for moving average cross over
-        # X is crosses above Y : X/Y format
 
-        crossovers = '20/50 50/200'.split()
-
-        for crossover in crossovers:
-            ma = crossover.split('/')
-            data[ma[0] + 'over' + ma[1]] = data[ma[0] + 'd'][-1] >= data[ma[1] + 'd'][-1]
-
+        add = add_crossover_check(data, crossovers)
         
         # Only pull Last Row
 
@@ -76,22 +113,29 @@ def ma_cross():
 
         # Only pull Test Columns
         frames.append(data.iloc[:,11:])
-        # used for testing the data
-        # frames.append(data)
     
     # Combine all the dataframes into 1
     results = pd.concat(frames)
 
     # Add the Date to the Email Message
-    date_message = [str('Data from ' + str(end))]
-    email_body.insert(0,date_message)
-    email_body.insert(1,results.to_string(justify='left', col_space=8))
+    email_body = create_message(results, end)
     
     # Send Email...
     send_email('\n'.join(str(item) for item in email_body))
 
     # This is used to test the ouput without sending an email
     # print('\n'.join(str(item) for item in email_body))
+
+def create_message(results, end):
+
+    # Add the Date to the Email Message
+    email_body = []
+
+    date_message = [str('Data from ' + str(end))]
+    email_body.insert(0,date_message)
+    email_body.insert(1,results.to_string(justify='left', col_space=8))
+
+    return email_body
 
 
 def get_stock_tickers():
