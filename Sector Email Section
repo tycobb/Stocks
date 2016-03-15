@@ -76,7 +76,6 @@ def start_script():
     moving_averages = '10 20 50 100 200'.split()
 
     # X is crosses above Y : X/Y format
-
     crossovers = '20/50 50/200'.split()
     
     for ticker, name in sorted(dict_sectors.items()):
@@ -88,27 +87,21 @@ def start_script():
         all_data[ticker] = data
 
         # Track Moving Average Prices
-        
         data = add_moving_averages(data, moving_averages)
 
         # Add symbol/sector to DataFrame
-
         data = add_ticker_sector(data,ticker, name)
 
         # Boolean for moving averages checks
-
         data = add_moving_averages_check(data, moving_averages)
 
         # Boolen check for moving average cross over
-
         add = add_crossover_check(data, crossovers)
         
         # Only pull Last Row
-
         data = data[-1:]
 
         #Remove Date Index and set symbol to be the new index
-
         data = data.set_index('symbol')
 
         # Only pull Test Columns
