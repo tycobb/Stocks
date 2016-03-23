@@ -1,0 +1,79 @@
+def main():
+	txt_file = r'/home/michael/googledrive/scripts/seanwork.txt'
+
+	with open(txt_file, 'r') as f:
+		data = f.readlines()
+
+
+	dic = {}
+	day = slice(0,2)
+
+	# data = data.strip()
+
+	dic_month_slice = {}
+	months = 'January Febuary March April May June July August September October November December'
+	sun = 'sunrise sunset'
+
+	i = 4
+	for month in months.split():
+		dic_month_slice[month] =  slice(i,i+9)
+		i+=11
+
+	d = {}
+	for row in data:
+		for month in months.split():
+	# 		# Only Create Add to Dicitonary if Date has a Value
+			l = []			
+			if len(row[dic_month_slice[month]].split()) > 0:
+				if d.get('{} {}'.format(month,row[day]), None) is None:
+					l.append(row[dic_month_slice[month]])
+					d['{} {}'.format(month,row[day])] = l
+				else:
+					d['{} {}'.format(month,row[day])].append(row[dic_month_slice[month]])
+				# print(l,row[dic_month_slice[month]])
+
+				# d['{} {}'.format(month,row[day])] = l.append(row[dic_month_slice[month]])
+
+	print(d['August 11'])
+	# print(d['May 11'])
+	assert 1 == 0
+
+	rise_slice = slice(0,4)
+	set_slice = slice(5,9)
+
+	for key, value in d.items():
+		if key == 'August 11': print(isinstance(d[key],dict))
+		if isinstance(d[key],dict):
+			# print(d[key])
+			if boolValue(value[rise_slice].strip()): 
+				d[key]['sunrise'].append(value[rise_slice])
+			if boolValue(value[set_slice].strip()):
+				d[key]['sunset'].append(value[set_slice])
+		else:
+			d[key] = {}
+			# print(isinstance(d[key],dict))
+			temp1 = []
+			temp2 = []
+			if boolValue(value[rise_slice].strip()): 
+				temp1.append(value[rise_slice])
+				d[key]['sunrise'] = temp1
+			if boolValue(value[set_slice].strip()):
+				temp2.append(value[set_slice])
+				d[key]['sunset'] = temp2
+
+	# print(d)
+	# print(d['January 01']['sunrise'])
+	# print(d['January 01']['sunset'])
+	# print(d['August 11']['sunset'])
+	# print(d['August 11']['sunrise'])
+	# print(d['August 11']['sunset'])
+	# print(d['May 09']['sunrise'])
+	# print(d['May 09']['sunset'])
+	# print(d['May 11']['sunrise'])
+	# print(d['May 11']['sunset'])
+
+
+def boolValue(x):
+	return len(x) > 0
+
+main()
