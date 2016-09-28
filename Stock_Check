@@ -1,0 +1,156 @@
+import pandas as pd
+import pandas.io.data as web
+import datetime as dt
+from scipy import stats, linspace
+
+
+def main():
+    ma_cross()
+
+
+def ma_cross():
+
+    all_data = {}
+    email_body = []
+
+    start = (dt.datetime.today() - dt.timedelta(days=300)).replace(hour=0,minute=0,second=0,microsecond=0)
+    end = dt.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
+
+    df_tuple = get_stock_tickers()
+
+    checks = '''8above21 crossabove50d crossbelow50d vol100%higher  bullishreversal bearishreversal
+                bearishreversal slopehigher slopelower closeathigh closeatlows 50above200 50above20
+                20above50 heavyvolume'''.split()
+
+    dict_symbol = {check: {} for check in checks}
+
+    for ticker,comp_rating in df_tuple:
+        try:
+            all_data[ticker] = web.DataReader(str(ticker),'yahoo', start, end)
+
+        except OSError:
+            print('Error getting data from Yahoo. Ticker: ' + ticker)
+
+        data = all_data[ticker]
+
+        data['8d'] = 0.0
+        data['20d'] = 0.0
+        data['21d'] = 0.0
+        data['50d'] = 0.0
+        data['200d'] = 0.0
+        data['Vol-50d'] = 0
+
+        data['8d'] = pd.rolling_mean(data['Adj Close'],8)
+        data['20d'] = pd.rolling_mean(data['Adj Close'],21)
+        data['21d'] = pd.rolling_mean(data['Adj Close'],21)
+        data['50d'] = pd.rolling_mean(data['Adj Close'],50)
+        data['200d'] = pd.rolling_mean(data['Adj Close'],200)
+        data['Vol-50d'] = pd.rolling_mean(data['Volume'],50)
+
+        min_adjclose = data['Adj Close'].min()
+        max_adjclose = data['Adj Close'].max()
+
+        # Linear Regression for Slope test
+        y1 = data['50d'][-10:].tolist()
+        x1 = [t for t in range(1,len(y1)+1)]
+        slope1, intercept1, r_value1, p_value1, stderr1 = stats.linregress(x1,y1)
+
+        y2 = data['50d'][-11:-1].tolist()
+        x2 = [t for t in range(1,len(y2)+1)]
+        slope2, intercept2, r_value2, p_value2, stderr2 = stats.linregress(x2,y2)
+
+        d = dict_tests(data, slope1, slope2, max_adjclose, min_adjclose)
+
+        for key, value in d['Test'].items():
+            if value:
+                dict_symbol[str(key)][str(ticker)] = (str(ticker) + ' --- ' + str(comp_rating).replace('.0',''))
+
+    for key, value in sorted(dict_symbol.items()):
+        if len(dict_symbol[str(key)]) > 0 : email_body.append(d['Email'][str(key)])
+        for k,v in dict_symbol[str(key)].items():
+            email_body.append(v)
+
+    if email_body:
+        date_message = [str('Data from ' + str(end))]
+        email_body.insert(0,date_message)
+        send_email('\n'.join(str(item) for item in email_body))
+
+    # This is used to test the ouput without sending an email
+
+    # if email_body:
+    #     date_message = [str('Data from ' + str(end))]
+    #     email_body.insert(0,date_message)
+    #     print('\n'.join(str(item) for item in email_body))
+
+
+def get_stock_tickers():
+
+    file_location = r'/home/michael/googledrive/scripts/email.xlsx'
+    df = pd.read_excel(file_location)
+    sym = df['Symbol'].tolist()
+    comp = df['Comp Rating'].tolist()
+    df_list = zip(sym,comp)
+
+    return df_list
+
+
+def send_email(body):
+
+    import smtplib
+    from email.mime.text import MIMEText    
+    
+    msg = MIMEText(body)
+    msg['Subject'] = 'SCW - Moving Average Notification'
+    msg['From'] = 'pythonStockProgram@gmail.com'
+    msg['To'] = 'petryszynjr@gmail.com, seansissman@gmail.com'
+
+    s = smtplib.SMTP('smtp.gmail.com',587)
+    s.ehlo()
+    s.starttls()
+    s.login('pythonStockProgram@gmail.com',password())
+    s.send_message(msg)
+    s.quit()
+
+
+def dict_tests(data, slope1, slope2, max_adjclose, min_adjclose):
+
+    dict_dicts = {}
+    tests = {}
+    test_email = {}
+
+    # Test Conditiion Conditions
+    tests['8above21'] = data['8d'][-1] > data['21d'][-1] and data['8d'][-2] < data['21d'][-2]
+    tests['crossabove50d'] = data['50d'][-1] < data['Adj Close'][-1] and data['50d'][-2] > data['Adj Close'][-2]
+    tests['crossbelow50d'] = data['50d'][-1] > data['Adj Close'][-1] and data['50d'][-2] < data['Adj Close'][-2]
+    tests['vol100%higher'] = data['Volume'][-1] > data['Vol-50d'][-1] * 2 and data['Adj Close'][-1] >= data['Adj Close'][-2] * 1.05
+    tests['bullishreversal'] = (data['Low'][-1] < data['Low'][-2] and data['Adj Close'][-1] > data['High'][-2] and data['Volume'][-1] > data['Vol-50d'][-1] * 1.5)
+    tests['bearishreversal'] = (data['High'][-1] > data['High'][-2] and data['Adj Close'][-1] < data['Low'][-2] and data['Volume'][-1] > data['Vol-50d'][-1] * 1.5)
+    tests['slopehigher'] = slope2 < 0 < slope1
+    tests['slopelower'] = slope1 < 0 < slope2
+    tests['closeathigh'] = max_adjclose == data['Adj Close'][-1]
+    tests['closeatlows'] = min_adjclose == data['Adj Close'][-1]
+    tests['50above200'] = data['50d'][-1] > data['200d'][-1] and data['50d'][-2] < data['200d'][-2]
+    tests['20above50'] = data['20d'][-1] > data['50d'][-1] and data['20d'][-2] < data['50d'][-2]
+    tests['50above20'] = data['50d'][-1] > data['20d'][-1] and data['50d'][-2] < data['20d'][-2]
+    tests['heavyvolume'] = data['Volume'][-1] > data['Vol-50d'][-1] * 2
+
+    # Emails Categories
+    test_email['8above21'] = '\n8d has crossed above the 21d.\n----------'
+    test_email['50above20'] = '\n50d has crossed above the 20d.\n----------'
+    test_email['20above50'] = '\n20d has crossed above the 50d.\n----------'
+    test_email['50above200'] = '\n50d has crossed above the 200d.\n----------'
+    test_email['crossabove50d'] = '\nClosing price crossed above its 50d.\n----------'
+    test_email['crossbelow50d'] = '\nClosing price crossed below its 50d.\n----------'
+    test_email['vol100%higher'] = '\nVolume was 100% higher than the 50d average with a +5% gain.\n----------'
+    test_email['bullishreversal'] = '\nBullish Reversal with Vol 50% higher than 50d average.\n----------'
+    test_email['bearishreversal'] = '\nBearish Reversal with Vol 50% higher than 50d average.\n----------'
+    test_email['slopehigher'] = '\nLinear Regress slope [negative to positive] on the 50d, last 10days.\n----------'
+    test_email['slopelower'] = '\nLinear Regress slope [positive to negative] on the 50d, last 10days.\n----------'
+    test_email['closeathigh'] = '\nClosed at the 200d high.\n----------'
+    test_email['closeatlows'] = '\nClosed at the 200d lows.\n----------'
+    test_email['heavyvolume'] = '\nHeavy Volume Day.\n----------'
+
+    dict_dicts['Test'] = tests
+    dict_dicts['Email'] = test_email
+
+    return dict_dicts
